@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommendation System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin-top: 20px;
+        }
+        .search-box {
+            margin: 20px auto;
+            width: 50%;
+            display: flex;
+            justify-content: center;
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+        }
+        button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            background-color: #e50914;
+            color: white;
+            border-radius: 5px;
+        }
+        .movie-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .movie-card {
+            background-color: #1e1e1e;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            width: 200px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Movie Recommendation System</h1>
+    <div class="search-box">
+        <input type="text" id="movieInput" placeholder="Enter a movie name...">
+        <button onclick="recommendMovies()">Search</button>
+    </div>
+    <div class="movie-list" id="movieList"></div>
+
+    <script>
+        const movieDatabase = {
+            "Inception": ["Interstellar", "Shutter Island", "Tenet"],
+            "Titanic": ["The Notebook", "Romeo + Juliet", "A Walk to Remember"],
+            "Avatar": ["Guardians of the Galaxy", "Star Wars", "The Matrix"],
+            "The Dark Knight": ["Joker", "Batman Begins", "Man of Steel"],
+        };
+        
+        function recommendMovies() {
+            const input = document.getElementById("movieInput").value;
+            const movieList = document.getElementById("movieList");
+            movieList.innerHTML = "";
+            
+            if (movieDatabase[input]) {
+                movieDatabase[input].forEach(movie => {
+                    const movieCard = document.createElement("div");
+                    movieCard.classList.add("movie-card");
+                    movieCard.innerHTML = <h3>${movie}</h3>;
+                    movieList.appendChild(movieCard);
+                });
+            } else {
+                movieList.innerHTML = "<p>No recommendations found.</p>";
+            }
+        }
+    </script>
+</body>
+</html>
