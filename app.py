@@ -11,7 +11,7 @@ def recommend():
     # Get user input from index.html
     user_input = request.form.get("movie_name")
 
-    # Sample recommendations (Replace this with your actual recommendation logic)
+    # Sample recommendations 
     recommended_movies = [
         ("Inception", "https://image.tmdb.org/t/p/w500/qmDpIHrmpJINaRKAfWQfftjCdyi.jpg"),
         ("Interstellar", "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"),
