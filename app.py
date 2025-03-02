@@ -1,24 +1,52 @@
-from flask import Flask, render_template, request
+from flask import Flask, request, jsonify
+import pandas as pd
+import pickle
+import os
+from implicit.als import AlternatingLeastSquares
+import scipy.sparse as sparse
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+# Load dataset
+data_file = "C:\\Users\\Divya\\OneDrive\\Documents\\Movie Recommendation System-1\\indian movies.csv"
+df = pd.read_csv(data_file)
+print("Dataset Columns:", df.columns)
 
-@app.route("/recommend", methods=["POST"])
-def recommend():
-    # Get user input from index.html
-    user_input = request.form.get("movie_name")
+# Load trained ALS model
+model_path = "C:\\Users\\Divya\\OneDrive\\Documents\\Movie Recommendation System-1\\models\\als_model.pkl"
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Trained model not found: {model_path}")
 
-    # Sample recommendations 
-    recommended_movies = [
-        ("Inception", "https://image.tmdb.org/t/p/w500/qmDpIHrmpJINaRKAfWQfftjCdyi.jpg"),
-        ("Interstellar", "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"),
-        ("The Dark Knight", "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg")
-    ]
+with open(model_path, "rb") as f:
+    model = pickle.load(f)
 
-    return render_template("recommend.html", movies=recommended_movies, user_input=user_input)
+# Create mapping of movieId to title
+movie_mapping = dict(zip(df["movieId"], df["title"]))
+
+@app.route("/recommend", methods=["GET"])
+def recommend_movies():
+    try:
+        movie_id = int(request.args.get("movieId"))
+        num_recommendations = int(request.args.get("num", 5))
+
+        if movie_id not in movie_mapping:
+            return jsonify({"error": "Invalid movieId"}), 400
+
+        # Convert movie ID to interaction matrix index
+        movie_index = df.index[df["movieId"] == movie_id].tolist()[0]
+
+        # Get similar movie recommendations
+        similar_movies = model.similar_items(movie_index, N=num_recommendations + 1)
+
+        recommendations = [
+            {"movieId": int(df.iloc[i]["movieId"]), "title": df.iloc[i]["title"]}
+            for i, _ in similar_movies[1:]
+        ]
+
+        return jsonify(recommendations)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
