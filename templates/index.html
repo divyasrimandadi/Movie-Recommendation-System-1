@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Movie Recommendation System</title>
+  <style>
+    /* General Styles */
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      color: #fff;
+      background: url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      max-width: 800px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .search-box {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 40px 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 25px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+    }
+
+    .search-box .search-icon {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #333;
+      cursor: pointer;
+    }
+
+    .genre-suggestions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .genre-suggestions .genre {
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .genre-suggestions .genre:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .movie-list {
+      text-align: left;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .movie-item {
+      padding: 10px;
+      margin: 5px 0;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .movie-item:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .movie-details {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .movie-details h2 {
+      margin: 0 0 10px;
+    }
+
+    .movie-details p {
+      margin: 5px 0;
+    }
+
+    .highlight {
+      background-color: yellow;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Movie Recommendation System</h1>
+    <div class="search-box">
+      <input type="text" id="search-bar" placeholder="Search for a movie...">
+      <span class="search-icon">&#128269;</span>
+    </div>
+    <div class="genre-suggestions">
+      <div class="genre" data-genre="love">❤️ Love</div>
+      <div class="genre" data-genre="entertainment">🎭 Entertainment</div>
+      <div class="genre" data-genre="fictional">🦄 Fictional</div>
+      <div class="genre" data-genre="horror">👻 Horror</div>
+      <div class="genre" data-genre="drama">🎭 Drama</div>
+      <div class="genre" data-genre="romance">💖 Romance</div>
+    </div>
+    <div class="movie-list" id="movie-list"></div>
+    <div class="movie-details" id="movie-details">
+      <h2 id="movie-title">Movie Title</h2>
+      <p id="movie-year">Year: </p>
+      <p id="movie-genre">Genre: </p>
+      <p id="movie-rating">Rating: </p>
+      <p id="movie-cast">Cast: </p>
+      <p id="movie-description">Description: </p>
+    </div>
+  </div>
+
+  <script>
+    // Sample movie data
+    const movies = [
+      {
+        title: "Inception",
+        year: 2010,
+        genre: "fictional",
+        rating: "8.8/10",
+        cast: "Leonardo DiCaprio, Joseph Gordon-Levitt, Ellen Page",
+        description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+      },
+      {
+        title: "The Dark Knight",
+        year: 2008,
+        genre: "entertainment",
+        rating: "9.0/10",
+        cast: "Christian Bale, Heath Ledger, Aaron Eckhart",
+        description: "When the menace known as the Joker emerges from his mysterious past, he wreaks havoc and chaos on the people of Gotham.",
+      },
+      {
+        title: "Interstellar",
+        year: 2014,
+        genre: "fictional",
+        rating: "8.6/10",
+        cast: "Matthew McConaughey, Anne Hathaway, Jessica Chastain",
+        description: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+      },
+      {
+        title: "Titanic",
+        year: 1997,
+        genre: "love",
+        rating: "7.8/10",
+        cast: "Leonardo DiCaprio, Kate Winslet",
+        description: "A romantic disaster film.",
+      },
+      {
+        title: "The Conjuring",
+        year: 2013,
+        genre: "horror",
+        rating: "7.5/10",
+        cast: "Patrick Wilson, Vera Farmiga",
+        description: "A terrifying horror movie.",
+      },
+      {
+        title: "La La Land",
+        year: 2016,
+        genre: "romance",
+        rating: "8.0/10",
+        cast: "Ryan Gosling, Emma Stone",
+        description: "A musical romantic drama.",
+      },
+    ];
+
+    // DOM Elements
+    const searchBar = document.getElementById("search-bar");
+    const movieList = document.getElementById("movie-list");
+    const movieDetails = document.getElementById("movie-details");
+    const movieTitle = document.getElementById("movie-title");
+    const movieYear = document.getElementById("movie-year");
+    const movieGenre = document.getElementById("movie-genre");
+    const movieRating = document.getElementById("movie-rating");
+    const movieCast = document.getElementById("movie-cast");
+    const movieDescription = document.getElementById("movie-description");
+    const genres = document.querySelectorAll(".genre");
+
+    // Function to display filtered movies
+    function displayMovies(searchQuery = "", genre = "") {
+      movieList.innerHTML = ""; // Clear previous results
+      const filteredMovies = movies.filter((movie) =>
+        movie.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        (genre === "" || movie.genre === genre)
+      );
+
+      if (filteredMovies.length === 0) {
+        movieList.innerHTML = "<div class='movie-item'>No movies found.</div>";
+        return;
+      }
+
+      filteredMovies.forEach((movie) => {
+        const movieItem = document.createElement("div");
+        movieItem.classList.add("movie-item");
+        movieItem.innerHTML = highlightText(movie.title, searchQuery);
+        movieItem.addEventListener("click", () => showMovieDetails(movie));
+        movieList.appendChild(movieItem);
+      });
+    }
+
+    // Function to highlight search query in movie titles
+    function highlightText(text, query) {
+      if (!query) return text;
+      const regex = new RegExp(`(${query})`, "gi");
+      return text.replace(regex, "<span class='highlight'>$1</span>");
+    }
+
+    // Function to show movie details
+    function showMovieDetails(movie) {
+      movieDetails.style.display = "block";
+      movieTitle.textContent = movie.title;
+      movieYear.textContent = `Year: ${movie.year}`;
+      movieGenre.textContent = `Genre: ${movie.genre}`;
+      movieRating.textContent = `Rating: ${movie.rating}`;
+      movieCast.textContent = `Cast: ${movie.cast}`;
+      movieDescription.textContent = `Description: ${movie.description}`;
+    }
+
+    // Event listener for the search bar
+    searchBar.addEventListener("input", (e) => {
+      displayMovies(e.target.value);
+    });
+
+    // Event listeners for genre suggestions
+    genres.forEach((genre) => {
+      genre.addEventListener("click", () => {
+        const selectedGenre = genre.getAttribute("data-genre");
+        displayMovies("", selectedGenre);
+      });
+    });
+
+    // Display all movies on page load
+    displayMovies();
+  </script>
+</body>
+</html>
