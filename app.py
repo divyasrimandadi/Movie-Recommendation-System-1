@@ -1,52 +1,66 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request
 import pandas as pd
 import pickle
 import os
-from implicit.als import AlternatingLeastSquares
-import scipy.sparse as sparse
 
+# Initialize Flask app
 app = Flask(__name__)
 
 # Load dataset
 data_file = "C:\\Users\\Divya\\OneDrive\\Documents\\Movie Recommendation System-1\\indian movies.csv"
 df = pd.read_csv(data_file)
-print("Dataset Columns:", df.columns)
 
-# Load trained ALS model
+# Ensure correct column names
+required_columns = {"movieId", "title", "year", "language", "rating", "genres", "Votes", "Timing"}
+if not required_columns.issubset(df.columns):
+    raise ValueError(f"Dataset must contain the following columns: {required_columns}")
+
+# Convert rating to numeric and handle missing values
+df["rating"] = pd.to_numeric(df["rating"], errors='coerce')
+df["rating"] = df["rating"].fillna(df["rating"][df["rating"].notna()].mean())  # Replace NaN with the mean of valid ratings
+
+df["Votes"] = df["Votes"].fillna(0)
+df["Timing"] = df["Timing"].fillna("Unknown")
+
+# Load trained model
 model_path = "C:\\Users\\Divya\\OneDrive\\Documents\\Movie Recommendation System-1\\models\\als_model.pkl"
-if not os.path.exists(model_path):
-    raise FileNotFoundError(f"Trained model not found: {model_path}")
+if os.path.exists(model_path):
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+else:
+    raise FileNotFoundError(f"Model file not found at {model_path}")
 
-with open(model_path, "rb") as f:
-    model = pickle.load(f)
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-# Create mapping of movieId to title
-movie_mapping = dict(zip(df["movieId"], df["title"]))
 
-@app.route("/recommend", methods=["GET"])
-def recommend_movies():
-    try:
-        movie_id = int(request.args.get("movieId"))
-        num_recommendations = int(request.args.get("num", 5))
 
-        if movie_id not in movie_mapping:
-            return jsonify({"error": "Invalid movieId"}), 400
+@app.route('/recommend', methods=['POST'])
+def recommend():
+    genre = request.form.get('genre', '').strip()
+    language = request.form.get('language', '').strip()
+    year = request.form.get('year', '').strip()
+    rating = request.form.get('rating', '').strip()
+    
+    filtered_df = df.copy()  # Start with the full dataset
 
-        # Convert movie ID to interaction matrix index
-        movie_index = df.index[df["movieId"] == movie_id].tolist()[0]
+    # Apply filters only if the user provided a value
+    if genre:
+        filtered_df = filtered_df[df["genres"].astype(str).str.contains(genre, case=False, na=False)]
+    if language:
+        filtered_df = filtered_df[df["language"].astype(str).str.contains(language, case=False, na=False)]
+    if year.isdigit():
+        filtered_df = filtered_df[df["year"] == int(year)]
+    if rating.replace('.', '', 1).isdigit():
+        filtered_df = filtered_df[df["rating"] >= float(rating)]
 
-        # Get similar movie recommendations
-        similar_movies = model.similar_items(movie_index, N=num_recommendations + 1)
+    # Get top 10 recommendations sorted by rating
+    recommended_movies = filtered_df[["title", "year", "rating"]].sort_values(by="rating", ascending=False).head(10)
 
-        recommendations = [
-            {"movieId": int(df.iloc[i]["movieId"]), "title": df.iloc[i]["title"]}
-            for i, _ in similar_movies[1:]
-        ]
+    return render_template('recommend.html', movies=recommended_movies.to_dict(orient='records'))
 
-        return jsonify(recommendations)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)

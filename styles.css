@@ -1,0 +1,53 @@
+body {
+    background-image: url('background.jpg');
+    background-size: cover;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: white;
+}
+
+.container {
+    max-width: 400px;
+    margin: auto;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+}
+
+h1 {
+    font-size: 24px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-top: 10px;
+}
+
+input, button {
+    padding: 10px;
+    margin-top: 5px;
+    border: none;
+    border-radius: 5px;
+}
+
+button {
+    background: #ff6600;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.btn {
+    display: inline-block;
+    background: #ff6600;
+    padding: 10px;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-top: 20px;
+}
