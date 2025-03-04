@@ -1,44 +1,52 @@
 import pandas as pd
 import numpy as np
-import scipy.sparse as sparse
-from implicit.als import AlternatingLeastSquares
-import pickle
-import os
+import implicit
+from scipy.sparse import csr_matrix
 
 # Load dataset
-data_file = "C:\\Users\\Divya\\OneDrive\\Documents\\Movie Recommendation System-1\\indian movies.csv"
-df = pd.read_csv(data_file)
+def load_data(file_path="indian movies.csv"):
+    df = pd.read_csv(file_path)
+    df = df.dropna(subset=["rating", "year"])  # Remove missing ratings
+    df["rating"] = pd.to_numeric(df["rating"], errors="coerce")
+    df = df.dropna(subset=["rating"])  # Drop remaining NaNs
+    
+    return df
 
-# Ensure correct column names
-required_columns = {"movieId", "title", "year", "language", "rating", "genres", "Votes", "Timing"}
-if not required_columns.issubset(df.columns):
-    raise ValueError(f"Dataset must contain the following columns: {required_columns}")
+def build_model(df):
+    # Assign unique user IDs for training (assume movies are user interactions)
+    df["user_id"] = np.arange(len(df))
+    
+    # Create a sparse matrix
+    movie_to_idx = {movie: i for i, movie in enumerate(df["title"].unique())}
+    df["movie_idx"] = df["title"].map(movie_to_idx)
+    user_movie_matrix = csr_matrix((df["rating"], (df["user_id"], df["movie_idx"])))
+    
+    # Train ALS model
+    model = implicit.als.AlternatingLeastSquares(factors=50, regularization=0.1, iterations=20)
+    model.fit(user_movie_matrix.T)
+    
+    return model, movie_to_idx, df
 
-# Convert rating to numeric and handle missing values
-df["rating"] = pd.to_numeric(df["rating"], errors='coerce').fillna(0)
+def recommend_movies(model, movie_to_idx, df, genre=None, year=None, language=None, min_rating=0):
+    movie_scores = {}
+    for movie, idx in movie_to_idx.items():
+        movie_data = df[df["title"] == movie].iloc[0]
+        if genre and genre not in movie_data["genres"]:
+            continue
+        if year and movie_data["year"] != str(year):
+            continue
+        if language and movie_data["language"] != language.lower():
+            continue
+        if movie_data["rating"] < min_rating:
+            continue
+        
+        movie_scores[movie] = movie_data["rating"]
+    
+    # Sort by rating
+    return sorted(movie_scores.items(), key=lambda x: x[1], reverse=True)[:10]
 
-df["Votes"] = df["Votes"].fillna(0)
-df["Timing"] = df["Timing"].fillna("Unknown")
-
-# Handle duplicate movieId-title pairs by averaging ratings
-df = df.groupby(["movieId", "title"]).agg({"rating": "mean"}).reset_index()
-
-# Create movie-item interaction matrix
-movie_item_matrix = df.pivot(index="movieId", columns="title", values="rating").fillna(0)
-
-# Convert to sparse matrix
-sparse_matrix = sparse.csr_matrix(movie_item_matrix.values)
-
-# Train ALS Model
-model = AlternatingLeastSquares(factors=50, regularization=0.1, iterations=20)
-model.fit(sparse_matrix)
-
-# Save model
-model_dir = "C:\\Users\\Divya\\OneDrive\\Documents\\Movie Recommendation System-1\\models"
-os.makedirs(model_dir, exist_ok=True)
-model_path = os.path.join(model_dir, "als_model.pkl")
-
-with open(model_path, "wb") as f:
-    pickle.dump(model, f)
-
-print(f"Model training complete. Saved as {model_path}")
+if __name__ == "__main__":
+    df = load_data()
+    model, movie_to_idx, df = build_model(df)
+    recommendations = recommend_movies(model, movie_to_idx, df, genre="Action", year=2020, min_rating=7)
+    print(recommendations)
