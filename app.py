@@ -11,7 +11,7 @@ model, movie_to_idx, df = build_model(df)
 def home():
     return render_template("index.html")
 
-@app.route("/recommend", methods=["POST"])
+@application.route("/recommend", methods=["POST"])
 def recommend():
     genre = request.form.get("genre")
     year = request.form.get("year")
