@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request
 from model import load_data, build_model, recommend_movies
 
-app = Flask(__name__)
+application = Flask(__name__)
+
 
 df = load_data()
 model, movie_to_idx, df = build_model(df)
@@ -30,4 +31,4 @@ def recommend():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    application.run(debug=True)
