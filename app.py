@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from model import load_data, build_model, recommend_movies
 
-application = Flask(__name__)
+app = Flask(__name__)
 
 
 df = load_data()
@@ -11,7 +11,7 @@ model, movie_to_idx, df = build_model(df)
 def home():
     return render_template("index.html")
 
-@application.route("/recommend", methods=["POST"])
+@app.route("/recommend", methods=["POST"])
 def recommend():
     genre = request.form.get("genre")
     year = request.form.get("year")
@@ -31,4 +31,4 @@ def recommend():
 
 
 if __name__ == "__main__":
-    application.run(debug=True)
+    app.run(debug=True)
